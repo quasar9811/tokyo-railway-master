@@ -136,11 +136,47 @@ function generateQuestions() {
 
     if (passing.length >= 2 && notPassing.length > 0) {
       const answer = notPassing[Math.floor(Math.random() * notPassing.length)];
+
       questions.push({
         question: `【通らない路線は？】\n\n「${station}」を通らない路線はどれ？`,
         choices: makeChoices(answer, passing),
         answer: answer,
         point: 25
+      });
+    }
+  });
+
+  // 乗換駅クイズ
+  const stationGroups = {};
+
+  targetLines.forEach(line => {
+    line.stations.forEach(station => {
+      if (!stationGroups[station]) {
+        stationGroups[station] = [];
+      }
+
+      stationGroups[station].push(line.name);
+    });
+  });
+
+  Object.keys(stationGroups).forEach(station => {
+    const passingLines = [...new Set(stationGroups[station])];
+
+    if (passingLines.length >= 3) {
+      const correctLines = shuffle(passingLines).slice(0, 3);
+      const wrongStations = stations.filter(s => s !== station);
+
+      questions.push({
+        question:
+          `【乗換駅クイズ】\n\n` +
+          `${correctLines[0]}\n` +
+          `${correctLines[1]}\n` +
+          `${correctLines[2]}\n\n` +
+          `この3路線が通る駅は？`,
+
+        choices: makeChoices(station, wrongStations),
+        answer: station,
+        point: 40
       });
     }
   });
@@ -150,6 +186,15 @@ function difficultyLabel() {
   if (selectedDifficulty === "easy") return "初級";
   if (selectedDifficulty === "normal") return "中級";
   return "上級";
+}
+
+function getTitle(score) {
+  if (score >= 2500) return "東京鉄道マスター";
+  if (score >= 1800) return "鉄道王";
+  if (score >= 1200) return "駅長";
+  if (score >= 800) return "車掌";
+  if (score >= 400) return "駅員";
+  return "鉄道初心者";
 }
 
 function getBestScore() {
@@ -170,6 +215,7 @@ function saveRanking() {
   ranking.push({
     name: player,
     score: score,
+    title: getTitle(score),
     correct: correctCount,
     wrong: wrongCount,
     difficulty: difficultyLabel(),
@@ -192,7 +238,7 @@ function showRanking() {
   let text = "🏆 ランキング\n\n";
 
   ranking.forEach((r, i) => {
-    text += `${i + 1}位　${r.name}　${r.score}点\n`;
+    text += `${i + 1}位　${r.name}　${r.score}点　${r.title}\n`;
   });
 
   rankingBox.innerText = text;
@@ -265,13 +311,15 @@ function answerQuestion(button, choice) {
     const getPoint = currentQuestion.point + bonus;
     score += getPoint;
 
-    resultEl.innerText = `⭕ 正解！ +${getPoint}点\nCombo: ${combo}`;
+    resultEl.innerText =
+      `⭕ 正解！ +${getPoint}点\nCombo: ${combo}`;
   } else {
     combo = 0;
     wrongCount++;
     button.classList.add("wrong");
 
-    resultEl.innerText = `❌ 不正解\n正解：${currentQuestion.answer}`;
+    resultEl.innerText =
+      `❌ 不正解\n正解：${currentQuestion.answer}`;
   }
 
   if (score > getBestScore()) {
@@ -326,6 +374,7 @@ function finishGame() {
   finalResult.innerText =
     `名前：${player}\n` +
     `難易度：${difficultyLabel()}\n` +
+    `称号：${getTitle(score)}\n` +
     `Score：${score}点\n` +
     `正解数：${correctCount}\n` +
     `不正解数：${wrongCount}\n` +
