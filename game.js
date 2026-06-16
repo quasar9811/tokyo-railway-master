@@ -1,3 +1,27 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCkp64fY_hbNTMUaepWY65MExkz-zb-fA",
+  authDomain: "tokyo-railway-master.firebaseapp.com",
+  projectId: "tokyo-railway-master",
+  storageBucket: "tokyo-railway-master.firebasestorage.app",
+  messagingSenderId: "574625318787",
+  appId: "1:574625318787:web:e346becf1572bbb63e18b6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const GAME_TIME = 120;
 
 const lines = [
@@ -205,40 +229,41 @@ function setBestScore(value) {
   localStorage.setItem("bestScore_" + selectedDifficulty, value);
 }
 
-function getRanking() {
-  return JSON.parse(localStorage.getItem("ranking_" + selectedDifficulty) || "[]");
-}
-
-function saveRanking() {
-  const ranking = getRanking();
-
-  ranking.push({
+async function saveRanking() {
+  await addDoc(collection(db, "rankings"), {
     name: player,
     score: score,
     title: getTitle(score),
     correct: correctCount,
     wrong: wrongCount,
     difficulty: difficultyLabel(),
-    date: new Date().toLocaleDateString("ja-JP")
+    createdAt: serverTimestamp()
   });
-
-  ranking.sort((a, b) => b.score - a.score);
-
-  localStorage.setItem("ranking_" + selectedDifficulty, JSON.stringify(ranking.slice(0, 10)));
 }
 
-function showRanking() {
-  const ranking = getRanking();
+async function showRanking() {
+  rankingBox.innerText = "ランキング読み込み中...";
 
-  if (ranking.length === 0) {
+  const q = query(
+    collection(db, "rankings"),
+    orderBy("score", "desc"),
+    limit(10)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
     rankingBox.innerText = "ランキングはまだありません。";
     return;
   }
 
-  let text = "🏆 ランキング\n\n";
+  let text = "🏆 ONLINE RANKING\n\n";
+  let rank = 1;
 
-  ranking.forEach((r, i) => {
-    text += `${i + 1}位　${r.name}　${r.score}点　${r.title}\n`;
+  snapshot.forEach(doc => {
+    const r = doc.data();
+    text += `${rank}位　${r.name}　${r.score}点　${r.title}　${r.difficulty}\n`;
+    rank++;
   });
 
   rankingBox.innerText = text;
@@ -362,14 +387,14 @@ function startGame() {
   loadQuestion();
 }
 
-function finishGame() {
+async function finishGame() {
   clearInterval(timerId);
 
   if (score > getBestScore()) {
     setBestScore(score);
   }
 
-  saveRanking();
+  await saveRanking();
 
   finalResult.innerText =
     `名前：${player}\n` +
