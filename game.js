@@ -230,43 +230,55 @@ function setBestScore(value) {
 }
 
 async function saveRanking() {
-  await addDoc(collection(db, "rankings"), {
-    name: player,
-    score: score,
-    title: getTitle(score),
-    correct: correctCount,
-    wrong: wrongCount,
-    difficulty: difficultyLabel(),
-    createdAt: serverTimestamp()
-  });
+  try {
+    await addDoc(collection(db, "rankings"), {
+      name: player,
+      score: score,
+      title: getTitle(score),
+      correct: correctCount,
+      wrong: wrongCount,
+      difficulty: difficultyLabel(),
+      createdAt: serverTimestamp()
+    });
+
+    console.log("ランキング保存成功");
+  } catch (error) {
+    console.error("ランキング保存失敗:", error);
+    alert("ランキング保存失敗: " + error.message);
+  }
 }
 
 async function showRanking() {
-  rankingBox.innerText = "ランキング読み込み中...";
+  try {
+    rankingBox.innerText = "ランキング読み込み中...";
 
-  const q = query(
-    collection(db, "rankings"),
-    orderBy("score", "desc"),
-    limit(10)
-  );
+    const q = query(
+      collection(db, "rankings"),
+      orderBy("score", "desc"),
+      limit(10)
+    );
 
-  const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
-    rankingBox.innerText = "ランキングはまだありません。";
-    return;
+    if (snapshot.empty) {
+      rankingBox.innerText = "ランキングはまだありません。";
+      return;
+    }
+
+    let text = "🏆 ONLINE RANKING\n\n";
+    let rank = 1;
+
+    snapshot.forEach(doc => {
+      const r = doc.data();
+      text += `${rank}位　${r.name}　${r.score}点　${r.title}　${r.difficulty}\n`;
+      rank++;
+    });
+
+    rankingBox.innerText = text;
+  } catch (error) {
+    console.error("ランキング読み込み失敗:", error);
+    rankingBox.innerText = "ランキング読み込み失敗";
   }
-
-  let text = "🏆 ONLINE RANKING\n\n";
-  let rank = 1;
-
-  snapshot.forEach(doc => {
-    const r = doc.data();
-    text += `${rank}位　${r.name}　${r.score}点　${r.title}　${r.difficulty}\n`;
-    rank++;
-  });
-
-  rankingBox.innerText = text;
 }
 
 function updateStatus() {
