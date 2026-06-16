@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東京鉄道マスター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="top-bar">
+        <h1>🚆 東京鉄道マスター</h1>
+        <button id="restartBtn">最初から</button>
+    </div>
+
+    <div id="status">
+        Score: 0 | Best: 0 | Combo: 0 | Time: 120
+    </div>
+
+    <div id="startScreen" class="screen">
+        <h2>ゲーム開始</h2>
+
+        <input id="playerName" type="text" placeholder="名前を入力">
+
+        <div class="difficulty">
+            <button class="difficultyBtn selected" data-difficulty="easy">初級</button>
+            <button class="difficultyBtn" data-difficulty="normal">中級</button>
+            <button class="difficultyBtn" data-difficulty="hard">上級</button>
+        </div>
+
+        <button id="startBtn">スタート</button>
+
+        <div id="rankingBox"></div>
+    </div>
+
+    <div id="gameScreen" class="screen hidden">
+        <div id="question">
+            問題がここに表示されます
+        </div>
+
+        <div id="choices"></div>
+
+        <div id="result"></div>
+
+        <div class="bottom-buttons">
+            <button id="nextBtn">次の問題</button>
+        </div>
+    </div>
+
+    <div id="endScreen" class="screen hidden">
+        <h2>終了！</h2>
+        <div id="finalResult"></div>
+        <button id="backToStartBtn">タイトルへ</button>
+    </div>
+
+</div>
+
+<script src="game.js"></script>
+
+</body>
+</html>
