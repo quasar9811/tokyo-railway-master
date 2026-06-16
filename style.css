@@ -214,3 +214,9 @@ h1 {
     white-space: pre-line;
     margin: 25px 0;
 }
+.version {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: bold;
+    margin-top: 4px;
+}
