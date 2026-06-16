@@ -220,3 +220,108 @@ h1 {
     font-weight: bold;
     margin-top: 4px;
 }
+@media (max-width: 768px) {
+    body {
+        background: #0f172a;
+    }
+
+    .container {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        padding: 18px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .top-bar {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    h1 {
+        font-size: 26px;
+        line-height: 1.2;
+    }
+
+    .version {
+        font-size: 12px;
+    }
+
+    #restartBtn {
+        font-size: 13px;
+        padding: 8px 14px;
+        white-space: nowrap;
+    }
+
+    #status {
+        font-size: 14px;
+        line-height: 1.6;
+        word-break: keep-all;
+    }
+
+    #startScreen {
+        padding: 22px 16px;
+    }
+
+    #playerName {
+        width: 100%;
+        font-size: 16px;
+    }
+
+    .difficulty {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .difficultyBtn {
+        width: 100%;
+        font-size: 17px;
+    }
+
+    #startBtn,
+    #backToStartBtn {
+        width: 100%;
+        font-size: 18px;
+        padding: 14px;
+    }
+
+    #question {
+        font-size: 17px;
+        min-height: 160px;
+        padding: 18px;
+        line-height: 1.5;
+    }
+
+    #choices {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #choices button {
+        font-size: 17px;
+        min-height: 54px;
+        padding: 13px;
+    }
+
+    #result {
+        font-size: 15px;
+        min-height: 52px;
+    }
+
+    #nextBtn {
+        width: 100%;
+        font-size: 18px;
+        padding: 14px;
+    }
+
+    #rankingBox {
+        font-size: 14px;
+        text-align: left;
+        overflow-x: auto;
+    }
+
+    #finalResult {
+        font-size: 18px;
+    }
+}
