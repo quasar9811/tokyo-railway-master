@@ -30,7 +30,6 @@ const lines = [
   { name: "総武線", company: "JR", level: "easy", stations: ["三鷹","吉祥寺","西荻窪","荻窪","阿佐ヶ谷","高円寺","中野","東中野","大久保","新宿","代々木","千駄ヶ谷","信濃町","四ツ谷","市ヶ谷","飯田橋","水道橋","御茶ノ水","秋葉原","浅草橋","両国","錦糸町"] },
   { name: "京浜東北線", company: "JR", level: "easy", stations: ["赤羽","東十条","王子","上中里","田端","西日暮里","日暮里","鶯谷","上野","御徒町","秋葉原","神田","東京","有楽町","新橋","浜松町","田町","高輪ゲートウェイ","品川"] },
   { name: "埼京線", company: "JR", level: "normal", stations: ["大崎","恵比寿","渋谷","新宿","池袋","板橋","十条","赤羽"] },
-
   { name: "丸ノ内線", company: "東京メトロ", level: "normal", stations: ["荻窪","南阿佐ケ谷","新高円寺","東高円寺","新中野","中野坂上","西新宿","新宿","新宿三丁目","新宿御苑前","四谷三丁目","四ツ谷","赤坂見附","国会議事堂前","霞ケ関","銀座","東京","大手町","淡路町","御茶ノ水","本郷三丁目","後楽園","茗荷谷","新大塚","池袋"] },
   { name: "銀座線", company: "東京メトロ", level: "normal", stations: ["渋谷","表参道","外苑前","青山一丁目","赤坂見附","溜池山王","虎ノ門","新橋","銀座","京橋","日本橋","三越前","神田","末広町","上野広小路","上野","稲荷町","田原町","浅草"] },
   { name: "東西線", company: "東京メトロ", level: "normal", stations: ["中野","落合","高田馬場","早稲田","神楽坂","飯田橋","九段下","竹橋","大手町","日本橋","茅場町","門前仲町","木場","東陽町","南砂町","西葛西","葛西"] },
@@ -39,7 +38,6 @@ const lines = [
   { name: "半蔵門線", company: "東京メトロ", level: "hard", stations: ["渋谷","表参道","青山一丁目","永田町","半蔵門","九段下","神保町","大手町","三越前","水天宮前","清澄白河","住吉","錦糸町","押上"] },
   { name: "南北線", company: "東京メトロ", level: "hard", stations: ["目黒","白金台","白金高輪","麻布十番","六本木一丁目","溜池山王","永田町","四ツ谷","市ヶ谷","飯田橋","後楽園","東大前","本駒込","駒込","西ケ原","王子","王子神谷","志茂","赤羽岩淵"] },
   { name: "副都心線", company: "東京メトロ", level: "hard", stations: ["和光市","地下鉄成増","地下鉄赤塚","平和台","氷川台","小竹向原","千川","要町","池袋","雑司が谷","西早稲田","東新宿","新宿三丁目","北参道","明治神宮前","渋谷"] },
-
   { name: "都営浅草線", company: "都営地下鉄", level: "hard", stations: ["西馬込","馬込","中延","戸越","五反田","高輪台","泉岳寺","三田","大門","新橋","東銀座","宝町","日本橋","人形町","東日本橋","浅草橋","蔵前","浅草","本所吾妻橋","押上"] },
   { name: "都営三田線", company: "都営地下鉄", level: "hard", stations: ["目黒","白金台","白金高輪","三田","芝公園","御成門","内幸町","日比谷","大手町","神保町","水道橋","春日","白山","千石","巣鴨","西巣鴨","新板橋","板橋区役所前","板橋本町","本蓮沼","志村坂上","志村三丁目","蓮根","西台","高島平","西高島平"] },
   { name: "都営新宿線", company: "都営地下鉄", level: "hard", stations: ["新宿","新宿三丁目","曙橋","市ヶ谷","九段下","神保町","小川町","岩本町","馬喰横山","浜町","森下","菊川","住吉","西大島","大島","東大島","船堀","一之江","瑞江","篠崎"] },
@@ -48,6 +46,8 @@ const lines = [
 
 let questions = [];
 let usedIndexes = [];
+let recentAnswers = [];
+let recentTypes = [];
 let score = 0;
 let combo = 0;
 let correctCount = 0;
@@ -74,36 +74,51 @@ const finalResult = document.getElementById("finalResult");
 const backToStartBtn = document.getElementById("backToStartBtn");
 const difficultyBtns = document.querySelectorAll(".difficultyBtn");
 
-function allStations(targetLines) {
-  return [...new Set(targetLines.flatMap(line => line.stations))];
-}
-
 function shuffle(array) {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
-function makeChoices(answer, candidates) {
-  const list = [answer];
+function allStations(targetLines) {
+  return [...new Set(targetLines.flatMap(line => line.stations))];
+}
 
-  shuffle(candidates).forEach(c => {
-    if (c !== answer && !list.includes(c) && list.length < 4) {
-      list.push(c);
+function makeChoices(answer, candidates) {
+  const choices = [answer];
+
+  shuffle(candidates).forEach(item => {
+    if (item !== answer && !choices.includes(item) && choices.length < 4) {
+      choices.push(item);
     }
   });
 
-  return shuffle(list);
+  return choices.length === 4 ? shuffle(choices) : [];
 }
 
 function targetLinesByDifficulty() {
-  if (selectedDifficulty === "easy") {
-    return lines.filter(l => l.level === "easy");
-  }
-
-  if (selectedDifficulty === "normal") {
-    return lines.filter(l => l.level === "easy" || l.level === "normal");
-  }
-
+  if (selectedDifficulty === "easy") return lines.filter(l => l.level === "easy");
+  if (selectedDifficulty === "normal") return lines.filter(l => l.level === "easy" || l.level === "normal");
   return lines;
+}
+
+function buildStationToLines(targetLines) {
+  const map = {};
+
+  targetLines.forEach(line => {
+    line.stations.forEach(station => {
+      if (!map[station]) map[station] = [];
+      if (!map[station].includes(line.name)) map[station].push(line.name);
+    });
+  });
+
+  return map;
+}
+
+function addQuestion(q) {
+  if (!q.choices || q.choices.length !== 4) return;
+  if (new Set(q.choices).size !== 4) return;
+  if (!q.choices.includes(q.answer)) return;
+
+  questions.push(q);
 }
 
 function generateQuestions() {
@@ -112,64 +127,32 @@ function generateQuestions() {
   const targetLines = targetLinesByDifficulty();
   const stations = allStations(targetLines);
   const lineNames = targetLines.map(l => l.name);
+  const stationToLines = buildStationToLines(targetLines);
+  const linesAt = station => stationToLines[station] || [];
 
-  const stationToLines = {};
-
-  targetLines.forEach(line => {
-    line.stations.forEach(station => {
-      if (!stationToLines[station]) {
-        stationToLines[station] = [];
-      }
-      stationToLines[station].push(line.name);
-    });
-  });
-
-  const uniqueLinesAtStation = station => [...new Set(stationToLines[station] || [])];
-
-  targetLines.forEach(line => {
-    for (let i = 0; i < line.stations.length - 1; i++) {
-      const from = line.stations[i];
-      const answer = line.stations[i + 1];
-      const wrongStations = stations.filter(s => s !== answer);
-
-      questions.push({
-        question: `【次の駅は？】\n\n${line.name}\n${from} → ？`,
-        choices: makeChoices(answer, wrongStations),
-        answer: answer,
-        point: 10,
-        explanation: `${line.name}では「${from}」の次は「${answer}」です。`
-      });
-    }
-  });
-
+  // この路線は？
+  // 같은 역 배열이 여러 노선에 있으면 출제 안 함.
   targetLines.forEach(line => {
     for (let i = 0; i < line.stations.length - 2; i++) {
       const s1 = line.stations[i];
       const s2 = line.stations[i + 1];
       const s3 = line.stations[i + 2];
 
-      const matchingLines = targetLines.filter(otherLine => {
-        for (let j = 0; j < otherLine.stations.length - 2; j++) {
-          if (
-            otherLine.stations[j] === s1 &&
-            otherLine.stations[j + 1] === s2 &&
-            otherLine.stations[j + 2] === s3
-          ) {
+      const matchingLines = targetLines.filter(other => {
+        for (let j = 0; j < other.stations.length - 2; j++) {
+          if (other.stations[j] === s1 && other.stations[j + 1] === s2 && other.stations[j + 2] === s3) {
             return true;
           }
         }
         return false;
       });
 
-      if (matchingLines.length !== 1) {
-        continue;
-      }
+      if (matchingLines.length !== 1) continue;
 
-      const wrongLines = lineNames.filter(name => name !== line.name);
-
-      questions.push({
+      addQuestion({
+        type: "lineSequence",
         question: `【この路線は？】\n\n${s1} → ${s2} → ${s3}`,
-        choices: makeChoices(line.name, wrongLines),
+        choices: makeChoices(line.name, lineNames.filter(n => n !== line.name)),
         answer: line.name,
         point: 20,
         explanation: `この並びは「${line.name}」です。`
@@ -177,17 +160,18 @@ function generateQuestions() {
     }
   });
 
+  // どの路線の駅？
+  // 복수 정답 노선을 선택지에 넣지 않음.
   Object.keys(stationToLines).forEach(station => {
-    const correctLines = uniqueLinesAtStation(station);
+    const correctLines = linesAt(station);
     const wrongLines = lineNames.filter(name => !correctLines.includes(name));
 
-    if (wrongLines.length < 3) {
-      return;
-    }
+    if (wrongLines.length < 3) return;
 
     correctLines.forEach(correctLine => {
-      questions.push({
-        question: `【どの路線の駅？】\n\n「${station}」が含まれる路線は？`,
+      addQuestion({
+        type: "stationLine",
+        question: `【どの路線の駅？】\n\n「${station}」が含まれる路線はどれ？`,
         choices: makeChoices(correctLine, wrongLines),
         answer: correctLine,
         point: 15,
@@ -196,20 +180,106 @@ function generateQuestions() {
     });
   });
 
-  const jrStations = [...new Set(
-    targetLines
-      .filter(l => l.company === "JR")
-      .flatMap(l => l.stations)
-  )];
+  // 乗換駅クイズ
+  Object.keys(stationToLines).forEach(station => {
+    const passingLines = linesAt(station);
 
+    if (passingLines.length < 3) return;
+
+    const quizLines = shuffle(passingLines).slice(0, 3);
+
+    const wrongStations = stations.filter(s => {
+      if (s === station) return false;
+
+      const target = linesAt(s);
+      return !quizLines.every(lineName => target.includes(lineName));
+    });
+
+    addQuestion({
+      type: "transferStation",
+      question: `【乗換駅クイズ】\n\n${quizLines[0]}\n${quizLines[1]}\n${quizLines[2]}\n\nこの3路線が通る駅は？`,
+      choices: makeChoices(station, wrongStations),
+      answer: station,
+      point: 40,
+      explanation: `「${station}」には ${quizLines.join("・")} が通っています。`
+    });
+  });
+
+  // 3ヒント駅当て
+  Object.keys(stationToLines).forEach(station => {
+    const passingLines = linesAt(station);
+
+    if (passingLines.length < 3) return;
+
+    const hintLines = shuffle(passingLines).slice(0, 3);
+
+    const wrongStations = stations.filter(s => {
+      if (s === station) return false;
+
+      const target = linesAt(s);
+      return !hintLines.every(lineName => target.includes(lineName));
+    });
+
+    addQuestion({
+      type: "threeHints",
+      question: `【3ヒント駅当て】\n\nヒント① ${hintLines[0]}\nヒント② ${hintLines[1]}\nヒント③ ${hintLines[2]}\n\nこの駅は？`,
+      choices: makeChoices(station, wrongStations),
+      answer: station,
+      point: 45,
+      explanation: `正解は「${station}」です。${hintLines.join("・")} が通っています。`
+    });
+  });
+
+  // 仲間外れクイズ
+  targetLines.forEach(line => {
+    const stationsOnLine = line.stations;
+    const stationsNotOnLine = stations.filter(s => !stationsOnLine.includes(s));
+
+    if (stationsOnLine.length < 3 || stationsNotOnLine.length < 1) return;
+
+    const answer = shuffle(stationsNotOnLine)[0];
+
+    addQuestion({
+      type: "oddOneOut",
+      question: `【仲間外れクイズ】\n\n次のうち、「${line.name}」の駅ではないものはどれ？`,
+      choices: shuffle([...shuffle(stationsOnLine).slice(0, 3), answer]),
+      answer: answer,
+      point: 30,
+      explanation: `「${answer}」は「${line.name}」の駅ではありません。`
+    });
+  });
+
+  // 終点クイズ
+  // 山手線は環状線なので出題しない。
+  targetLines
+    .filter(line => line.name !== "山手線")
+    .forEach(line => {
+      const start = line.stations[0];
+      const end = line.stations[line.stations.length - 1];
+      const answer = `${start}・${end}`;
+
+      const wrongPairs = targetLines
+        .filter(l => l.name !== line.name && l.name !== "山手線")
+        .map(l => `${l.stations[0]}・${l.stations[l.stations.length - 1]}`);
+
+      addQuestion({
+        type: "terminal",
+        question: `【終点クイズ】\n\n「${line.name}」の両端の駅はどれ？`,
+        choices: makeChoices(answer, wrongPairs),
+        answer: answer,
+        point: 35,
+        explanation: `「${line.name}」の両端は「${answer}」です。`
+      });
+    });
+
+  // JRではない駅は？
+  // JRにもある同名駅은 출제 안 함.
+  const jrStations = [...new Set(targetLines.filter(l => l.company === "JR").flatMap(l => l.stations))];
   const nonJrStations = stations.filter(s => !jrStations.includes(s));
 
   nonJrStations.forEach(station => {
-    if (jrStations.length < 3) {
-      return;
-    }
-
-    questions.push({
+    addQuestion({
+      type: "notJR",
       question: "【JRではない駅は？】\n\n次のうち、JRの駅ではないものはどれ？",
       choices: makeChoices(station, jrStations),
       answer: station,
@@ -218,195 +288,23 @@ function generateQuestions() {
     });
   });
 
+  // 通らない路線は？
   Object.keys(stationToLines).forEach(station => {
-    const passingLines = uniqueLinesAtStation(station);
+    const passingLines = linesAt(station);
     const notPassingLines = lineNames.filter(name => !passingLines.includes(name));
 
-    if (passingLines.length < 3 || notPassingLines.length < 1) {
-      return;
-    }
+    if (passingLines.length < 3 || notPassingLines.length < 1) return;
 
-    const answer = notPassingLines[Math.floor(Math.random() * notPassingLines.length)];
+    const answer = shuffle(notPassingLines)[0];
 
-    questions.push({
+    addQuestion({
+      type: "notPassingLine",
       question: `【通らない路線は？】\n\n「${station}」を通らない路線はどれ？`,
       choices: makeChoices(answer, passingLines),
       answer: answer,
       point: 25,
       explanation: `「${station}」を通らないのは「${answer}」です。`
     });
-  });
-
-  Object.keys(stationToLines).forEach(station => {
-    const passingLines = uniqueLinesAtStation(station);
-
-    if (passingLines.length < 3) {
-      return;
-    }
-
-    const quizLines = shuffle(passingLines).slice(0, 3);
-
-    const wrongStations = stations.filter(s => {
-      if (s === station) return false;
-      const linesAtStation = uniqueLinesAtStation(s);
-      return !quizLines.every(lineName => linesAtStation.includes(lineName));
-    });
-
-    if (wrongStations.length < 3) {
-      return;
-    }
-
-    questions.push({
-      question:
-        `【乗換駅クイズ】\n\n` +
-        `${quizLines[0]}\n` +
-        `${quizLines[1]}\n` +
-        `${quizLines[2]}\n\n` +
-        `この3路線が通る駅は？`,
-      choices: makeChoices(station, wrongStations),
-      answer: station,
-      point: 40,
-      explanation: `「${station}」には ${quizLines.join("・")} が通っています。`
-    });
-  });
-
-  Object.keys(stationToLines).forEach(station => {
-    const passingLines = uniqueLinesAtStation(station);
-
-    if (passingLines.length < 3) {
-      return;
-    }
-
-    const hintLines = shuffle(passingLines).slice(0, 3);
-
-    const wrongStations = stations.filter(s => {
-      if (s === station) return false;
-      const linesAtStation = uniqueLinesAtStation(s);
-      return !hintLines.every(lineName => linesAtStation.includes(lineName));
-    });
-
-    if (wrongStations.length < 3) {
-      return;
-    }
-
-    questions.push({
-      question:
-        `【3ヒント駅当て】\n\n` +
-        `ヒント① ${hintLines[0]}\n` +
-        `ヒント② ${hintLines[1]}\n` +
-        `ヒント③ ${hintLines[2]}\n\n` +
-        `この駅は？`,
-      choices: makeChoices(station, wrongStations),
-      answer: station,
-      point: 45,
-      explanation: `正解は「${station}」です。${hintLines.join("・")} が通っています。`
-    });
-  });
-
-  targetLines.forEach(line => {
-    if (line.stations.length < 3) {
-      return;
-    }
-
-    const stationsOnLine = line.stations;
-    const stationsNotOnLine = stations.filter(s => !stationsOnLine.includes(s));
-
-    if (stationsNotOnLine.length < 1) {
-      return;
-    }
-
-    const memberStations = shuffle(stationsOnLine).slice(0, 3);
-    const answer = shuffle(stationsNotOnLine)[0];
-
-    questions.push({
-      question:
-        `【仲間外れクイズ】\n\n` +
-        `次のうち、「${line.name}」の駅ではないものはどれ？`,
-      choices: shuffle([...memberStations, answer]),
-      answer: answer,
-      point: 30,
-      explanation: `「${answer}」は「${line.name}」の駅ではありません。`
-    });
-  });
-
-  targetLines.forEach(line => {
-    if (line.stations.length < 2) {
-      return;
-    }
-
-    const start = line.stations[0];
-    const end = line.stations[line.stations.length - 1];
-    const answer = `${start}・${end}`;
-
-    const wrongPairs = targetLines
-      .filter(l => l.name !== line.name && l.stations.length >= 2)
-      .map(l => `${l.stations[0]}・${l.stations[l.stations.length - 1]}`);
-
-    if (wrongPairs.length < 3) {
-      return;
-    }
-
-    questions.push({
-      question: `【終点クイズ】\n\n「${line.name}」の両端の駅はどれ？`,
-      choices: makeChoices(answer, wrongPairs),
-      answer: answer,
-      point: 35,
-      explanation: `「${line.name}」の両端は「${answer}」です。`
-    });
-  });
-
-  const oneTransferQuestions = [
-    {
-      question: "【乗換1回クイズ】\n\n新宿 → 浅草\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "赤坂見附",
-      choices: ["赤坂見附", "大手町", "飯田橋", "青山一丁目"],
-      point: 50,
-      explanation: "丸ノ内線で赤坂見附まで行き、銀座線に乗り換えるルートです。"
-    },
-    {
-      question: "【乗換1回クイズ】\n\n池袋 → 押上\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "大手町",
-      choices: ["大手町", "新宿", "表参道", "飯田橋"],
-      point: 50,
-      explanation: "丸ノ内線で大手町まで行き、半蔵門線に乗り換えるルートです。"
-    },
-    {
-      question: "【乗換1回クイズ】\n\n高田馬場 → 浅草\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "日本橋",
-      choices: ["日本橋", "新宿", "神田", "三田"],
-      point: 50,
-      explanation: "東西線で日本橋まで行き、銀座線に乗り換えるルートです。"
-    },
-    {
-      question: "【乗換1回クイズ】\n\n西馬込 → 大手町\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "三田",
-      choices: ["三田", "新橋", "日本橋", "五反田"],
-      point: 50,
-      explanation: "都営浅草線で三田まで行き、都営三田線に乗り換えるルートです。"
-    },
-    {
-      question: "【乗換1回クイズ】\n\n九段下 → 目黒\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "永田町",
-      choices: ["永田町", "大手町", "新宿", "飯田橋"],
-      point: 50,
-      explanation: "半蔵門線で永田町まで行き、南北線に乗り換えるルートです。"
-    },
-    {
-      question: "【乗換1回クイズ】\n\n東陽町 → 池袋\n\n1回乗り換えるなら、どこで乗り換える？",
-      answer: "飯田橋",
-      choices: ["飯田橋", "大手町", "日本橋", "新宿"],
-      point: 50,
-      explanation: "東西線で飯田橋まで行き、有楽町線に乗り換えるルートです。"
-    }
-  ];
-
-  oneTransferQuestions.forEach(q => {
-    const answerExists = stations.includes(q.answer);
-    const choicesExist = q.choices.every(choice => stations.includes(choice));
-
-    if (answerExists && choicesExist) {
-      questions.push(q);
-    }
   });
 }
 
@@ -456,12 +354,7 @@ async function showRanking() {
   try {
     rankingBox.innerText = "ランキング読み込み中...";
 
-    const q = query(
-      collection(db, "rankings"),
-      orderBy("score", "desc"),
-      limit(10)
-    );
-
+    const q = query(collection(db, "rankings"), orderBy("score", "desc"), limit(10));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
@@ -486,38 +379,55 @@ async function showRanking() {
 }
 
 function updateStatus() {
-  statusEl.innerText =
-    `Score: ${score} | Best: ${getBestScore()} | Combo: ${combo} | Time: ${time}`;
+  statusEl.innerText = `Score: ${score} | Best: ${getBestScore()} | Combo: ${combo} | Time: ${time}`;
 }
 
 function showScreen(screen) {
   startScreen.classList.add("hidden");
   gameScreen.classList.add("hidden");
   endScreen.classList.add("hidden");
-
   screen.classList.remove("hidden");
+}
+
+function pickQuestionIndex() {
+  const available = questions
+    .map((q, index) => ({ q, index }))
+    .filter(item => !usedIndexes.includes(item.index))
+    .filter(item => !recentAnswers.includes(item.q.answer))
+    .filter(item => !(recentTypes.length >= 2 && recentTypes[0] === item.q.type && recentTypes[1] === item.q.type));
+
+  const pool = available.length > 0
+    ? available
+    : questions.map((q, index) => ({ q, index })).filter(item => !usedIndexes.includes(item.index));
+
+  if (pool.length === 0) {
+    usedIndexes = [];
+    return Math.floor(Math.random() * questions.length);
+  }
+
+  return shuffle(pool)[0].index;
 }
 
 function loadQuestion() {
   resultEl.innerText = "";
   nextBtn.disabled = true;
 
-  if (usedIndexes.length >= questions.length) {
-    usedIndexes = [];
+  if (questions.length === 0) {
+    questionEl.innerText = "問題を作成できませんでした。";
+    choicesEl.innerHTML = "";
+    return;
   }
 
-  let index;
-
-  do {
-    index = Math.floor(Math.random() * questions.length);
-  } while (usedIndexes.includes(index));
-
+  const index = pickQuestionIndex();
   usedIndexes.push(index);
   currentQuestion = questions[index];
 
-  questionEl.innerText =
-    `${currentQuestion.question}\n\n${currentQuestion.point}点問題`;
+  recentAnswers.unshift(currentQuestion.answer);
+  recentAnswers = recentAnswers.slice(0, 4);
+  recentTypes.unshift(currentQuestion.type);
+  recentTypes = recentTypes.slice(0, 3);
 
+  questionEl.innerText = `${currentQuestion.question}\n\n${currentQuestion.point}点問題`;
   choicesEl.innerHTML = "";
 
   shuffle(currentQuestion.choices).forEach(choice => {
@@ -533,7 +443,6 @@ function answerQuestion(button, choice) {
 
   allButtons.forEach(btn => {
     btn.disabled = true;
-
     if (btn.innerText === currentQuestion.answer) {
       btn.classList.add("correct");
     }
@@ -546,7 +455,6 @@ function answerQuestion(button, choice) {
     correctCount++;
 
     let bonus = 0;
-
     if (combo >= 10) bonus = 50;
     else if (combo >= 5) bonus = 20;
     else if (combo >= 3) bonus = 10;
@@ -554,15 +462,13 @@ function answerQuestion(button, choice) {
     const getPoint = currentQuestion.point + bonus;
     score += getPoint;
 
-    resultEl.innerText =
-      `⭕ 正解！ +${getPoint}点\nCombo: ${combo}${explanation}`;
+    resultEl.innerText = `⭕ 正解！ +${getPoint}点\nCombo: ${combo}${explanation}`;
   } else {
     combo = 0;
     wrongCount++;
     button.classList.add("wrong");
 
-    resultEl.innerText =
-      `❌ 不正解\n正解：${currentQuestion.answer}${explanation}`;
+    resultEl.innerText = `❌ 不正解\n正解：${currentQuestion.answer}${explanation}`;
   }
 
   if (score > getBestScore()) {
@@ -574,21 +480,17 @@ function answerQuestion(button, choice) {
 }
 
 function startGame() {
-  player = playerName.value.trim();
-
-  if (player === "") {
-    player = "名無し";
-  }
-
+  player = playerName.value.trim() || "名無し";
   score = 0;
   combo = 0;
   correctCount = 0;
   wrongCount = 0;
   time = GAME_TIME;
   usedIndexes = [];
+  recentAnswers = [];
+  recentTypes = [];
 
   generateQuestions();
-
   clearInterval(timerId);
 
   timerId = setInterval(() => {
@@ -638,6 +540,7 @@ difficultyBtns.forEach(btn => {
 });
 
 startBtn.onclick = startGame;
+nextBtn.onclick = loadQuestion;
 
 restartBtn.onclick = () => {
   clearInterval(timerId);
@@ -650,8 +553,6 @@ restartBtn.onclick = () => {
   updateStatus();
   showRanking();
 };
-
-nextBtn.onclick = loadQuestion;
 
 backToStartBtn.onclick = () => {
   showScreen(startScreen);
