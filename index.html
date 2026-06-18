@@ -1,67 +1,54 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>東京鉄道マスター</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>東京鉄道マスター</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
-
-<div class="container">
-
+  <div class="container">
     <div class="top-bar">
-    <div>
+      <div>
         <h1>🚆 東京鉄道マスター</h1>
-        <div class="version">v1.0</div>
+        <div class="version">v1.2</div>
+      </div>
+      <button id="restartBtn">最初から</button>
     </div>
 
-    <button id="restartBtn">最初から</button>
-</div>
-
-    <div id="status">
-        Score: 0 | Best: 0 | Combo: 0 | Time: 100
-    </div>
+    <div id="status">Score: 0 | Best: 0 | Combo: 0 | Time: 100</div>
 
     <div id="startScreen" class="screen">
-        <h2>ゲーム開始</h2>
+      <h2>ゲーム開始</h2>
+      <input id="playerName" type="text" placeholder="名前を入力">
 
-        <input id="playerName" type="text" placeholder="名前を入力">
+      <div class="difficulty">
+        <button class="difficultyBtn selected" data-difficulty="easy">初級</button>
+        <button class="difficultyBtn" data-difficulty="normal">中級</button>
+        <button class="difficultyBtn" data-difficulty="hard">上級</button>
+      </div>
 
-        <div class="difficulty">
-            <button class="difficultyBtn selected" data-difficulty="easy">初級</button>
-            <button class="difficultyBtn" data-difficulty="normal">中級</button>
-            <button class="difficultyBtn" data-difficulty="hard">上級</button>
-        </div>
-
-        <button id="startBtn">スタート</button>
-
-        <div id="rankingBox"></div>
+      <button id="startBtn">スタート</button>
+      <div id="rankingBox">ランキング読み込み中...</div>
     </div>
 
     <div id="gameScreen" class="screen hidden">
-        <div id="question">
-            問題がここに表示されます
-        </div>
-
-        <div id="choices"></div>
-
-        <div id="result"></div>
-
-        <div class="bottom-buttons">
-            <button id="nextBtn">次の問題</button>
-        </div>
+      <div id="question">問題がここに表示されます</div>
+      <div id="choices"></div>
+      <div id="result"></div>
+      <div class="bottom-buttons">
+        <button id="nextBtn">次の問題</button>
+      </div>
     </div>
 
     <div id="endScreen" class="screen hidden">
-        <h2>終了！</h2>
-        <div id="finalResult"></div>
-        <button id="backToStartBtn">タイトルへ</button>
+      <h2>終了！</h2>
+      <div id="finalResult"></div>
+      <button id="backToStartBtn">タイトルへ</button>
     </div>
+  </div>
 
-</div>
-
-<script type="module" src="game.js"></script>
-
+  <script type="module" src="game.js?v=20"></script>
 </body>
 </html>
