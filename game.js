@@ -113,95 +113,299 @@ function generateQuestions() {
   const stations = allStations(targetLines);
   const lineNames = targetLines.map(l => l.name);
 
+  const stationToLines = {};
+
+  targetLines.forEach(line => {
+    line.stations.forEach(station => {
+      if (!stationToLines[station]) {
+        stationToLines[station] = [];
+      }
+      stationToLines[station].push(line.name);
+    });
+  });
+
+  const uniqueLinesAtStation = station => [...new Set(stationToLines[station] || [])];
+
   targetLines.forEach(line => {
     for (let i = 0; i < line.stations.length - 1; i++) {
+      const from = line.stations[i];
+      const answer = line.stations[i + 1];
+      const wrongStations = stations.filter(s => s !== answer);
+
       questions.push({
-        question: `【次の駅は？】\n\n${line.name}\n${line.stations[i]} → ？`,
-        choices: makeChoices(line.stations[i + 1], stations),
-        answer: line.stations[i + 1],
-        point: 10
+        question: `【次の駅は？】\n\n${line.name}\n${from} → ？`,
+        choices: makeChoices(answer, wrongStations),
+        answer: answer,
+        point: 10,
+        explanation: `${line.name}では「${from}」の次は「${answer}」です。`
       });
     }
+  });
 
+  targetLines.forEach(line => {
     for (let i = 0; i < line.stations.length - 2; i++) {
+      const s1 = line.stations[i];
+      const s2 = line.stations[i + 1];
+      const s3 = line.stations[i + 2];
+
+      const matchingLines = targetLines.filter(otherLine => {
+        for (let j = 0; j < otherLine.stations.length - 2; j++) {
+          if (
+            otherLine.stations[j] === s1 &&
+            otherLine.stations[j + 1] === s2 &&
+            otherLine.stations[j + 2] === s3
+          ) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (matchingLines.length !== 1) {
+        continue;
+      }
+
+      const wrongLines = lineNames.filter(name => name !== line.name);
+
       questions.push({
-        question: `【この路線は？】\n\n${line.stations[i]} → ${line.stations[i + 1]} → ${line.stations[i + 2]}`,
-        choices: makeChoices(line.name, lineNames),
+        question: `【この路線は？】\n\n${s1} → ${s2} → ${s3}`,
+        choices: makeChoices(line.name, wrongLines),
         answer: line.name,
-        point: 20
+        point: 20,
+        explanation: `この並びは「${line.name}」です。`
       });
     }
+  });
 
-    line.stations.forEach(station => {
+  Object.keys(stationToLines).forEach(station => {
+    const correctLines = uniqueLinesAtStation(station);
+    const wrongLines = lineNames.filter(name => !correctLines.includes(name));
+
+    if (wrongLines.length < 3) {
+      return;
+    }
+
+    correctLines.forEach(correctLine => {
       questions.push({
         question: `【どの路線の駅？】\n\n「${station}」が含まれる路線は？`,
-        choices: makeChoices(line.name, lineNames),
-        answer: line.name,
-        point: 15
+        choices: makeChoices(correctLine, wrongLines),
+        answer: correctLine,
+        point: 15,
+        explanation: `「${station}」は「${correctLine}」の駅です。`
       });
     });
   });
 
-  const jrStations = [...new Set(targetLines.filter(l => l.company === "JR").flatMap(l => l.stations))];
+  const jrStations = [...new Set(
+    targetLines
+      .filter(l => l.company === "JR")
+      .flatMap(l => l.stations)
+  )];
+
   const nonJrStations = stations.filter(s => !jrStations.includes(s));
 
   nonJrStations.forEach(station => {
+    if (jrStations.length < 3) {
+      return;
+    }
+
     questions.push({
       question: "【JRではない駅は？】\n\n次のうち、JRの駅ではないものはどれ？",
       choices: makeChoices(station, jrStations),
       answer: station,
-      point: 20
+      point: 20,
+      explanation: `「${station}」はこのデータ内ではJRの駅ではありません。`
     });
   });
 
-  stations.forEach(station => {
-    const passing = targetLines.filter(l => l.stations.includes(station)).map(l => l.name);
-    const notPassing = lineNames.filter(name => !passing.includes(name));
+  Object.keys(stationToLines).forEach(station => {
+    const passingLines = uniqueLinesAtStation(station);
+    const notPassingLines = lineNames.filter(name => !passingLines.includes(name));
 
-    if (passing.length >= 2 && notPassing.length > 0) {
-      const answer = notPassing[Math.floor(Math.random() * notPassing.length)];
-
-      questions.push({
-        question: `【通らない路線は？】\n\n「${station}」を通らない路線はどれ？`,
-        choices: makeChoices(answer, passing),
-        answer: answer,
-        point: 25
-      });
+    if (passingLines.length < 3 || notPassingLines.length < 1) {
+      return;
     }
+
+    const answer = notPassingLines[Math.floor(Math.random() * notPassingLines.length)];
+
+    questions.push({
+      question: `【通らない路線は？】\n\n「${station}」を通らない路線はどれ？`,
+      choices: makeChoices(answer, passingLines),
+      answer: answer,
+      point: 25,
+      explanation: `「${station}」を通らないのは「${answer}」です。`
+    });
   });
 
-  // 乗換駅クイズ
-  const stationGroups = {};
+  Object.keys(stationToLines).forEach(station => {
+    const passingLines = uniqueLinesAtStation(station);
+
+    if (passingLines.length < 3) {
+      return;
+    }
+
+    const quizLines = shuffle(passingLines).slice(0, 3);
+
+    const wrongStations = stations.filter(s => {
+      if (s === station) return false;
+      const linesAtStation = uniqueLinesAtStation(s);
+      return !quizLines.every(lineName => linesAtStation.includes(lineName));
+    });
+
+    if (wrongStations.length < 3) {
+      return;
+    }
+
+    questions.push({
+      question:
+        `【乗換駅クイズ】\n\n` +
+        `${quizLines[0]}\n` +
+        `${quizLines[1]}\n` +
+        `${quizLines[2]}\n\n` +
+        `この3路線が通る駅は？`,
+      choices: makeChoices(station, wrongStations),
+      answer: station,
+      point: 40,
+      explanation: `「${station}」には ${quizLines.join("・")} が通っています。`
+    });
+  });
+
+  Object.keys(stationToLines).forEach(station => {
+    const passingLines = uniqueLinesAtStation(station);
+
+    if (passingLines.length < 3) {
+      return;
+    }
+
+    const hintLines = shuffle(passingLines).slice(0, 3);
+
+    const wrongStations = stations.filter(s => {
+      if (s === station) return false;
+      const linesAtStation = uniqueLinesAtStation(s);
+      return !hintLines.every(lineName => linesAtStation.includes(lineName));
+    });
+
+    if (wrongStations.length < 3) {
+      return;
+    }
+
+    questions.push({
+      question:
+        `【3ヒント駅当て】\n\n` +
+        `ヒント① ${hintLines[0]}\n` +
+        `ヒント② ${hintLines[1]}\n` +
+        `ヒント③ ${hintLines[2]}\n\n` +
+        `この駅は？`,
+      choices: makeChoices(station, wrongStations),
+      answer: station,
+      point: 45,
+      explanation: `正解は「${station}」です。${hintLines.join("・")} が通っています。`
+    });
+  });
 
   targetLines.forEach(line => {
-    line.stations.forEach(station => {
-      if (!stationGroups[station]) {
-        stationGroups[station] = [];
-      }
+    if (line.stations.length < 3) {
+      return;
+    }
 
-      stationGroups[station].push(line.name);
+    const stationsOnLine = line.stations;
+    const stationsNotOnLine = stations.filter(s => !stationsOnLine.includes(s));
+
+    if (stationsNotOnLine.length < 1) {
+      return;
+    }
+
+    const memberStations = shuffle(stationsOnLine).slice(0, 3);
+    const answer = shuffle(stationsNotOnLine)[0];
+
+    questions.push({
+      question:
+        `【仲間外れクイズ】\n\n` +
+        `次のうち、「${line.name}」の駅ではないものはどれ？`,
+      choices: shuffle([...memberStations, answer]),
+      answer: answer,
+      point: 30,
+      explanation: `「${answer}」は「${line.name}」の駅ではありません。`
     });
   });
 
-  Object.keys(stationGroups).forEach(station => {
-    const passingLines = [...new Set(stationGroups[station])];
+  targetLines.forEach(line => {
+    if (line.stations.length < 2) {
+      return;
+    }
 
-    if (passingLines.length >= 3) {
-      const correctLines = shuffle(passingLines).slice(0, 3);
-      const wrongStations = stations.filter(s => s !== station);
+    const start = line.stations[0];
+    const end = line.stations[line.stations.length - 1];
+    const answer = `${start}・${end}`;
 
-      questions.push({
-        question:
-          `【乗換駅クイズ】\n\n` +
-          `${correctLines[0]}\n` +
-          `${correctLines[1]}\n` +
-          `${correctLines[2]}\n\n` +
-          `この3路線が通る駅は？`,
+    const wrongPairs = targetLines
+      .filter(l => l.name !== line.name && l.stations.length >= 2)
+      .map(l => `${l.stations[0]}・${l.stations[l.stations.length - 1]}`);
 
-        choices: makeChoices(station, wrongStations),
-        answer: station,
-        point: 40
-      });
+    if (wrongPairs.length < 3) {
+      return;
+    }
+
+    questions.push({
+      question: `【終点クイズ】\n\n「${line.name}」の両端の駅はどれ？`,
+      choices: makeChoices(answer, wrongPairs),
+      answer: answer,
+      point: 35,
+      explanation: `「${line.name}」の両端は「${answer}」です。`
+    });
+  });
+
+  const oneTransferQuestions = [
+    {
+      question: "【乗換1回クイズ】\n\n新宿 → 浅草\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "赤坂見附",
+      choices: ["赤坂見附", "大手町", "飯田橋", "青山一丁目"],
+      point: 50,
+      explanation: "丸ノ内線で赤坂見附まで行き、銀座線に乗り換えるルートです。"
+    },
+    {
+      question: "【乗換1回クイズ】\n\n池袋 → 押上\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "大手町",
+      choices: ["大手町", "新宿", "表参道", "飯田橋"],
+      point: 50,
+      explanation: "丸ノ内線で大手町まで行き、半蔵門線に乗り換えるルートです。"
+    },
+    {
+      question: "【乗換1回クイズ】\n\n高田馬場 → 浅草\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "日本橋",
+      choices: ["日本橋", "新宿", "神田", "三田"],
+      point: 50,
+      explanation: "東西線で日本橋まで行き、銀座線に乗り換えるルートです。"
+    },
+    {
+      question: "【乗換1回クイズ】\n\n西馬込 → 大手町\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "三田",
+      choices: ["三田", "新橋", "日本橋", "五反田"],
+      point: 50,
+      explanation: "都営浅草線で三田まで行き、都営三田線に乗り換えるルートです。"
+    },
+    {
+      question: "【乗換1回クイズ】\n\n九段下 → 目黒\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "永田町",
+      choices: ["永田町", "大手町", "新宿", "飯田橋"],
+      point: 50,
+      explanation: "半蔵門線で永田町まで行き、南北線に乗り換えるルートです。"
+    },
+    {
+      question: "【乗換1回クイズ】\n\n東陽町 → 池袋\n\n1回乗り換えるなら、どこで乗り換える？",
+      answer: "飯田橋",
+      choices: ["飯田橋", "大手町", "日本橋", "新宿"],
+      point: 50,
+      explanation: "東西線で飯田橋まで行き、有楽町線に乗り換えるルートです。"
+    }
+  ];
+
+  oneTransferQuestions.forEach(q => {
+    const answerExists = stations.includes(q.answer);
+    const choicesExist = q.choices.every(choice => stations.includes(choice));
+
+    if (answerExists && choicesExist) {
+      questions.push(q);
     }
   });
 }
@@ -335,6 +539,8 @@ function answerQuestion(button, choice) {
     }
   });
 
+  const explanation = currentQuestion.explanation ? `\n${currentQuestion.explanation}` : "";
+
   if (choice === currentQuestion.answer) {
     combo++;
     correctCount++;
@@ -349,14 +555,14 @@ function answerQuestion(button, choice) {
     score += getPoint;
 
     resultEl.innerText =
-      `⭕ 正解！ +${getPoint}点\nCombo: ${combo}`;
+      `⭕ 正解！ +${getPoint}点\nCombo: ${combo}${explanation}`;
   } else {
     combo = 0;
     wrongCount++;
     button.classList.add("wrong");
 
     resultEl.innerText =
-      `❌ 不正解\n正解：${currentQuestion.answer}`;
+      `❌ 不正解\n正解：${currentQuestion.answer}${explanation}`;
   }
 
   if (score > getBestScore()) {
